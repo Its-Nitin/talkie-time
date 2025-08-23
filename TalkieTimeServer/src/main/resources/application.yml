@@ -1,0 +1,18 @@
+spring:
+    application:
+        name: TalkieTime
+
+    datasource:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://localhost:5432/talkietime
+        username: postgres
+        password: devil@123
+    jpa:
+        show-sql: true
+        hibernate:
+            ddl-auto: update
+        properties:
+            hibernate:
+                show_sql: true
+server:
+    port: 8081
