@@ -4,9 +4,8 @@ import com.talkeitime.chat.dto.LoginDTO;
 import com.talkeitime.chat.dto.RegisterUserDTO;
 import com.talkeitime.chat.dto.UserDTO;
 import com.talkeitime.chat.service.AuthService;
-import java.util.List;
+import com.talkeitime.chat.utils.AuthResponse;
 import org.apache.coyote.BadRequestException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,12 +36,13 @@ public class AuthResource {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody LoginDTO loginDTO)
+    public ResponseEntity<AuthResponse> loginUser(@RequestBody LoginDTO loginDTO)
         throws BadRequestException {
-        if (loginDTO != null && loginDTO.getUsername() == null && loginDTO.getPassword() == null) {
-            throw new BadRequestException("Invalid request");
+        if (loginDTO == null || loginDTO.getUsername() == null || loginDTO.getPassword() == null) {
+            throw new BadRequestException("Username or password is required!!!");
         }
-        String token = authService.loginUser(loginDTO);
+        AuthResponse token = authService.loginUser(loginDTO);
+
         return ResponseEntity.ok().body(token);
     }
 }

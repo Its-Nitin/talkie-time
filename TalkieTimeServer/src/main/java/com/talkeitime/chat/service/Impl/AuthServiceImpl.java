@@ -9,6 +9,8 @@ import com.talkeitime.chat.entities.User;
 import com.talkeitime.chat.repository.UserRepository;
 import com.talkeitime.chat.service.AuthService;
 import com.talkeitime.chat.config.utils.JwtUtil;
+import com.talkeitime.chat.service.mapper.UserMapper;
+import com.talkeitime.chat.utils.AuthResponse;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String loginUser(LoginDTO loginDTO) throws BadRequestException {
+    public AuthResponse loginUser(LoginDTO loginDTO) throws BadRequestException {
         User user = userRepository.findByUsername(loginDTO.getUsername());
 
         if (user == null) {
@@ -53,6 +55,6 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
             throw new BadRequestException("Invalid password");
         }
-        return jwtUtil.generateToken(loginDTO.getUsername());
+        return new AuthResponse(jwtUtil.generateToken(loginDTO.getUsername()), UserMapper.toUserDTO(user));
     }
 }

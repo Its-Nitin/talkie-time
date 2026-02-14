@@ -16,3 +16,6 @@ spring:
                 show_sql: true
 server:
     port: 8081
+jwt:
+    expireTime: 1800000 # 30 minutes
+

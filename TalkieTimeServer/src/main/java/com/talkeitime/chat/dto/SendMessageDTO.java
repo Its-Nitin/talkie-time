@@ -10,5 +10,6 @@ import lombok.Value;
 public class SendMessageDTO implements Serializable {
 
     Long receiverId;
+    Long senderId;
     String message;
 }
