@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "prettier": "^3.3.3",
-    "prettier-plugin-java": "^2.7.4"
+    "prettier": "^2.8.8",
+    "prettier-plugin-java": "^2.5.0"
   }
 }
