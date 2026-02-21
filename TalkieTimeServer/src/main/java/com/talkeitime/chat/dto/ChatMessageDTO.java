@@ -1,5 +1,6 @@
 package com.talkeitime.chat.dto;
 
+import com.talkeitime.chat.entities.MessageStatus;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,4 +18,5 @@ public class ChatMessageDTO implements Serializable {
     UserDTO receiver;
     String message;
     String createdAt;
+    MessageStatus status;
 }

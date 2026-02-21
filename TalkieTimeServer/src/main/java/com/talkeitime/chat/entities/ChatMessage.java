@@ -28,4 +28,7 @@ public class ChatMessage {
     @ManyToOne
     @JoinColumn(name = "receiver_id", nullable = false)
     private User receiver;
+
+    @Enumerated(EnumType.STRING)
+    private MessageStatus status;
 }
