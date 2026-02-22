@@ -1,0 +1,42 @@
+.chat-box {
+  height: 400px;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.typing {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  padding-top: 4px;
+}
+
+.typing::after {
+  content: '...';
+  animation: dots 1.2s steps(3, end) infinite;
+}
+
+@keyframes dots {
+  0%   { content: ''; }
+  33%  { content: '.'; }
+  66%  { content: '..'; }
+  100% { content: '...'; }
+}
+
+.tick {
+  font-size: 12px;
+}
+
+.double {
+  letter-spacing: -2px;
+}
+
+.seen {
+  color: #3b82f6; /* blue */
+}

@@ -1,0 +1,63 @@
+<div class="container mt-3">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h5>Chat with {{ receiverUsername }}</h5>
+  </div>
+
+  <!-- Chat Box -->
+  <div
+    #scrollMe
+    class="border rounded p-3 mb-2"
+    style="height: 400px; overflow-y: auto; background: #f8f9fa;"
+  >
+
+    <div *ngFor="let msg of messages" class="mb-2">
+
+      <!-- Sent -->
+      <div
+        *ngIf="msg.sender.id === currentUser.id"
+        class="text-end"
+      >
+        <span class="badge bg-primary p-2">
+          {{ msg.message }}
+        </span>
+        <div class="small text-muted">
+          {{ msg.createdAt | date:'shortTime' }}
+          <span *ngIf="msg.status === 'SENT'" class="tick single">✔</span>
+
+          <span *ngIf="msg.status === 'DELIVERED'" class="tick double">✔✔</span>
+
+          <span *ngIf="msg.status === 'SEEN'" class="tick double seen">✔✔</span>
+        </div>
+      </div>
+
+      <!-- Received -->
+      <div
+        *ngIf="msg.sender.id !== currentUser.id"
+        class="text-start"
+      >
+        <span class="badge bg-secondary p-2">
+          {{ msg.message }}
+        </span>
+        <div class="small text-muted">
+          {{ msg.createdAt | date:'shortTime' }}
+        </div>
+      </div>
+    </div>
+    <div *ngIf="isTyping" class="typing">typing</div>
+  </div>
+  <!-- Input -->
+  <div class="input-group">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Type message..."
+      [(ngModel)]="newMessage"
+      (keyup.enter)="sendMessage()"
+      (input)="onTyping()"
+    />
+    <button class="btn btn-primary" (click)="sendMessage()">Send</button>
+  </div>
+
+</div>

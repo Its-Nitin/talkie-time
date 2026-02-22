@@ -1,0 +1,40 @@
+<!--<div class="container mt-5">-->
+
+<!--  &lt;!&ndash; Navbar &ndash;&gt;-->
+<!--  <div class="d-flex justify-content-between align-items-center mb-4">-->
+<!--    <h3>Welcome, {{ username || 'User' }} 👋</h3>-->
+<!--    <button class="btn btn-danger" (click)="logout()">Logout</button>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Card &ndash;&gt;-->
+<!--  <div class="card shadow p-4">-->
+<!--    <h4 class="mb-3">TalkieTime Chat</h4>-->
+<!--    <p>Your secure chat application is ready.</p>-->
+
+<!--    <div class="d-flex gap-2 mt-3">-->
+<!--      <button class="btn btn-primary" routerLink="/users">-->
+<!--        View Users-->
+<!--      </button>-->
+
+<!--      <button class="btn btn-outline-secondary" disabled>-->
+<!--        Chat (Coming Next)-->
+<!--      </button>-->
+<!--    </div>-->
+<!--  </div>-->
+
+<!--</div>-->
+
+
+<div class="container-fluid vh-100">
+  <div class="row h-100">
+
+    <div class="col-md-4 col-lg-3 border-end p-0">
+      <app-users></app-users>
+    </div>
+
+    <div class="col-md-8 col-lg-9 d-flex flex-column p-0">
+      <app-chat></app-chat>
+    </div>
+
+  </div>
+</div>
