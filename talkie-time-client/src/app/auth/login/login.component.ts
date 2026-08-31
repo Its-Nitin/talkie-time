@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {AuthResponse, AuthService} from '../../services/auth.service';
+import {AuthService} from '../../services/auth.service';
 import {Router, RouterLink} from '@angular/router';
-import {WebsocketService} from '../../services/websocket.service';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +24,6 @@ export class LoginComponent {
       username: ['', Validators.required],
       password: ['', Validators.required]
     });
-    localStorage.clear();
   }
 
   onSubmit() {

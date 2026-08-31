@@ -1,13 +1,15 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {ChatMessage, ChatService} from '../../services/chat.service';
+import {Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
+import {ChatMessage, ChatService, MessageStatus} from '../../services/chat.service';
 import {ActivatedRoute} from '@angular/router';
-import {CommonModule, DatePipe} from '@angular/common';
+import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {WebsocketService} from '../../services/websocket.service';
-import {debounceTime, Subject, throttleTime} from 'rxjs';
+import {debounceTime, Subject, Subscription, throttleTime} from 'rxjs';
+import {User} from '../../services/users.service';
 
 @Component({
   selector: 'app-chat',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule
@@ -15,93 +17,151 @@ import {debounceTime, Subject, throttleTime} from 'rxjs';
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss'
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChild('scrollMe') private chatContainer!: ElementRef;
+
+  @Input() selectedUser: User | null = null;
 
   messages: ChatMessage[] = [];
   newMessage = '';
 
-  receiverId!: number;
-  currentUser !: any;
-  receiverUsername!: string;
+  receiverId: number | null = null;
+  currentUser: any = null;
+  receiverUsername: string = '';
   isTyping = false;
 
   private typingInput$ = new Subject<void>();
+  private subscriptions: Subscription[] = [];
 
+  constructor(
+    private route: ActivatedRoute,
+    private chatService: ChatService,
+    private wsService: WebsocketService
+  ) {}
 
-  constructor(private route: ActivatedRoute,
-              private chatService: ChatService,
-              private wsService: WebsocketService
-  ) {
-  }
   ngOnInit() {
-    this.receiverId = Number(this.route.snapshot.paramMap.get('id'));
-    this.receiverUsername = this.route.snapshot.paramMap.get('username') || '';
     const storedUser = localStorage.getItem('loggedUser');
     this.currentUser = storedUser ? JSON.parse(storedUser) : null;
 
+    // Check route parameters if not passed via @Input
+    if (!this.selectedUser) {
+      const routeId = this.route.snapshot.paramMap.get('id');
+      const routeUsername = this.route.snapshot.paramMap.get('username');
+      if (routeId && routeUsername) {
+        this.receiverId = Number(routeId);
+        this.receiverUsername = routeUsername;
+        this.loadMessages();
+      }
+    }
 
-    this.wsService.getMessage().subscribe((msg) => {
-      console.log(msg);
-      if (msg.sender.username === this.receiverUsername || msg.receiver.username === this.receiverUsername) {
-        this.messages.push(msg);
-        setTimeout(() => this.scrollToBottom(), 50);
-      }
-    })
-    this.wsService.typing$.subscribe((event) => {
-      if (event.senderId === this.receiverUsername) {
-        this.scrollToBottom()
-        this.isTyping = event.typing
-      }
-    })
+    // Subscribe to incoming messages
+    this.subscriptions.push(
+      this.wsService.getMessage().subscribe((msg: ChatMessage) => {
+        if (
+          (msg.sender?.username === this.receiverUsername && msg.receiver?.username === this.currentUser?.username) ||
+          (msg.sender?.username === this.currentUser?.username && msg.receiver?.username === this.receiverUsername)
+        ) {
+          this.messages.push(msg);
+          setTimeout(() => this.scrollToBottom(), 50);
 
-    this.wsService.msgStatus$.subscribe((event) => {
-      if (event.senderId === this.receiverUsername) {
-        this.scrollToBottom()
-        this.isTyping = event.typing
-      }
-    })
+          // Acknowledge SEEN for incoming message if currently chatting with this user
+          if (msg.sender?.username === this.receiverUsername) {
+            this.wsService.sendAck(msg.id, 'SEEN');
+          }
+        }
+      })
+    );
+
+    // Subscribe to typing indicator
+    this.subscriptions.push(
+      this.wsService.typing$.subscribe((event) => {
+        if (event.senderId === this.receiverUsername) {
+          this.isTyping = event.typing;
+          if (this.isTyping) {
+            setTimeout(() => this.scrollToBottom(), 50);
+          }
+        }
+      })
+    );
+
+    // Subscribe to message status updates (ACKs: DELIVERED, SEEN)
+    this.subscriptions.push(
+      this.wsService.msgStatus$.subscribe((ack: { messageId: number; status: MessageStatus }) => {
+        const msg = this.messages.find(m => m.id === ack.messageId);
+        if (msg) {
+          msg.status = ack.status;
+        }
+      })
+    );
 
     this.typingSetup();
-    this.loadMessages();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['selectedUser'] && this.selectedUser) {
+      this.receiverId = this.selectedUser.id;
+      this.receiverUsername = this.selectedUser.username;
+      this.isTyping = false;
+      this.messages = [];
+      this.loadMessages();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(s => s.unsubscribe());
   }
 
   private typingSetup() {
-    // When user starts typing → emit START once
-    this.typingInput$
-      .pipe(
-        throttleTime(1000)   // prevents flooding
-      )
-      .subscribe(() => {
-        this.wsService.sendTyping(this.receiverUsername, true);
-      });
+    this.subscriptions.push(
+      this.typingInput$.pipe(throttleTime(1000)).subscribe(() => {
+        if (this.receiverUsername) {
+          this.wsService.sendTyping(this.receiverUsername, true);
+        }
+      })
+    );
 
-    // When user stops typing → emit STOP after idle
-    this.typingInput$
-      .pipe(
-        debounceTime(1200)   // idle detection
-      )
-      .subscribe(() => {
-        this.wsService.sendTyping(this.receiverUsername, false);
-      });
+    this.subscriptions.push(
+      this.typingInput$.pipe(debounceTime(1200)).subscribe(() => {
+        if (this.receiverUsername) {
+          this.wsService.sendTyping(this.receiverUsername, false);
+        }
+      })
+    );
   }
 
   loadMessages() {
+    if (!this.receiverId) {
+      this.messages = [];
+      return;
+    }
+
     this.chatService.getHistory(this.receiverId).subscribe({
-      next: (messages) =>
-      {
-        this.messages = messages
-        setTimeout(() => this.scrollToBottom(), 500);
+      next: (messages) => {
+        this.messages = messages;
+        setTimeout(() => this.scrollToBottom(), 100);
+
+        // Acknowledge SEEN for loaded unread messages from this sender
+        this.messages.forEach(msg => {
+          if (msg.sender?.id === this.receiverId && msg.status !== 'SEEN') {
+            this.wsService.sendAck(msg.id, 'SEEN');
+          }
+        });
       },
-      error: () => alert("Failed to load messages")
-  });
+      error: (err) => console.error("Failed to load messages:", err)
+    });
   }
 
   sendMessage() {
-    if (!this.newMessage.trim()) { return; }
-    // this.chatService.sendMessage(this.receiverId, this.newMessage).subscribe(() => this.loadMessages());
-    const message = {senderId: this.currentUser.id, receiverId: this.receiverId, message: this.newMessage, status: 'SENT'};
-    this.wsService.sendMessage(message);
+    if (!this.newMessage.trim() || !this.receiverId) { return; }
+
+    const messagePayload = {
+      senderId: this.currentUser?.id,
+      receiverId: this.receiverId,
+      message: this.newMessage.trim(),
+      status: 'SENT'
+    };
+
+    this.wsService.sendMessage(messagePayload);
     this.newMessage = '';
   }
 
@@ -109,9 +169,17 @@ export class ChatComponent implements OnInit {
     this.typingInput$.next();
   }
 
+  parseTimestamp(createdAt?: string): Date | null {
+    if (!createdAt) return null;
+    const numeric = Number(createdAt);
+    return isNaN(numeric) ? new Date(createdAt) : new Date(numeric);
+  }
+
   scrollToBottom(): void {
     try {
-      this.chatContainer.nativeElement.scrollTop = this.chatContainer.nativeElement.scrollHeight;
+      if (this.chatContainer) {
+        this.chatContainer.nativeElement.scrollTop = this.chatContainer.nativeElement.scrollHeight;
+      }
     } catch (err) { }
   }
 }

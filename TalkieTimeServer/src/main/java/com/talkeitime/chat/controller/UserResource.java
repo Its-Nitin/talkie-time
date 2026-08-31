@@ -1,21 +1,20 @@
 package com.talkeitime.chat.controller;
 
 import com.talkeitime.chat.dto.UserDTO;
-import com.talkeitime.chat.service.AuthService;
 import com.talkeitime.chat.service.UserService;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("users")
+@RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserResource {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<List<UserDTO>> getAllUsers() {

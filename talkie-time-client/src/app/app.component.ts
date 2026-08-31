@@ -12,17 +12,6 @@ import {WebsocketService} from './services/websocket.service';
   ],
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'talkie-time';
-  authService = inject(AuthService);
-
-  constructor( private router: Router, private wsService: WebsocketService) {
-  }
-  ngOnInit(){
-    if (!this.authService.isLoggedIn()) {
-      this.authService.logout();
-      this.router.navigate(['/login']);
-    }
-  }
-
 }

@@ -1,5 +1,6 @@
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
+import {environment} from '../../environments/environment';
 
 export interface RegisterUser {
   username: string;
@@ -8,7 +9,7 @@ export interface RegisterUser {
 }
 
 export interface LoginUser {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -17,22 +18,20 @@ export interface AuthResponse {
   user: any;
 }
 
-@Injectable(
-  {
-    providedIn: 'root'
-  }
-)
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthService {
 
-  private apiUrl = 'http://localhost:8082';
+  private apiUrl = environment.apiUrl;
   constructor(private http: HttpClient) { }
 
   register(user: RegisterUser) {
-    return this.http.post( `${this.apiUrl}/api/v1/auth/register`, user);
+    return this.http.post(`${this.apiUrl}/api/v1/auth/register`, user);
   }
 
   login(user: LoginUser) {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/api/v1/auth/login`, user );
+    return this.http.post<AuthResponse>(`${this.apiUrl}/api/v1/auth/login`, user);
   }
 
   saveToken(token: string) {

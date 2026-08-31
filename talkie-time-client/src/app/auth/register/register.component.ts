@@ -35,7 +35,10 @@ export class RegisterComponent {
 
     this.authService.register(this.registerForm.value).subscribe({
       next: () => this.router.navigate(['/login']),
-      error: (err) => alert("Registration failed: " + err.error.message + "")
+      error: (err) => {
+        const msg = err?.error?.message || err?.error || err?.message || 'Registration failed';
+        alert('Registration failed: ' + (typeof msg === 'string' ? msg : JSON.stringify(msg)));
+      }
     });
   }
 

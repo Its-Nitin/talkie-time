@@ -1,6 +1,8 @@
 package com.talkeitime.chat.dto;
 
 import java.io.Serializable;
+
+import jakarta.validation.constraints.NotBlank;
 import lombok.Value;
 
 /**
@@ -9,6 +11,9 @@ import lombok.Value;
 @Value
 public class LoginDTO implements Serializable {
 
+    @NotBlank
     String username;
+
+    @NotBlank
     String password;
 }

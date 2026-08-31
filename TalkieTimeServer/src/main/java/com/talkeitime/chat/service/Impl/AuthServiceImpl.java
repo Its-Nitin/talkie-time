@@ -33,6 +33,9 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUsername(registerUserDTO.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
+        if (userRepository.existsByEmail(registerUserDTO.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
 
         User user = new User();
         user.setUsername(registerUserDTO.getUsername());
@@ -46,15 +49,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse loginUser(LoginDTO loginDTO) throws BadRequestException {
         User user = userRepository.findByUsername(loginDTO.getUsername());
+        if (user == null) {
+            user = userRepository.findByEmail(loginDTO.getUsername());
+        }
 
         if (user == null) {
-            throw new BadRequestException(
-                "User not found with username: " + loginDTO.getUsername()
-            );
+            throw new BadRequestException("Invalid username or password");
         }
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
-            throw new BadRequestException("Invalid password");
+            throw new BadRequestException("Invalid username or password");
         }
-        return new AuthResponse(jwtUtil.generateToken(loginDTO.getUsername()), UserMapper.toUserDTO(user));
+        return new AuthResponse(jwtUtil.generateToken(user.getUsername()), UserMapper.toUserDTO(user));
     }
 }

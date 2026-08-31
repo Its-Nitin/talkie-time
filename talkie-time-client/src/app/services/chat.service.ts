@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
+import {environment} from '../../environments/environment';
 
 export type MessageStatus = 'SENT' | 'DELIVERED' | 'SEEN';
 export interface ChatMessage {
@@ -14,7 +15,7 @@ export interface ChatMessage {
   providedIn: 'root'
 })
 export class ChatService {
-  private apiUrl = 'http://localhost:8082';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 

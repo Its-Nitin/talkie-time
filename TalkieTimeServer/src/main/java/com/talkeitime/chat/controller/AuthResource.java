@@ -5,6 +5,7 @@ import com.talkeitime.chat.dto.RegisterUserDTO;
 import com.talkeitime.chat.dto.UserDTO;
 import com.talkeitime.chat.service.AuthService;
 import com.talkeitime.chat.utils.AuthResponse;
+import jakarta.validation.Valid;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,29 +21,14 @@ public class AuthResource {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> registerUser(@RequestBody RegisterUserDTO registerUserDTO)
+    public ResponseEntity<UserDTO> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO)
         throws BadRequestException {
-        if (
-            registerUserDTO != null &&
-            registerUserDTO.getUsername() == null &&
-            registerUserDTO.getPassword() == null &&
-            registerUserDTO.getEmail() == null
-        ) {
-            throw new BadRequestException("Invalid request");
-        }
-        UserDTO userDTO = authService.registerUser(registerUserDTO);
-
-        return ResponseEntity.ok().body(userDTO);
+        return ResponseEntity.ok().body(authService.registerUser(registerUserDTO));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> loginUser(@RequestBody LoginDTO loginDTO)
+    public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginDTO loginDTO)
         throws BadRequestException {
-        if (loginDTO == null || loginDTO.getUsername() == null || loginDTO.getPassword() == null) {
-            throw new BadRequestException("Username or password is required!!!");
-        }
-        AuthResponse token = authService.loginUser(loginDTO);
-
-        return ResponseEntity.ok().body(token);
+        return ResponseEntity.ok().body(authService.loginUser(loginDTO));
     }
 }

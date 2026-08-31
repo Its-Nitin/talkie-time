@@ -25,15 +25,23 @@ public class ChatServiceImpl implements ChatService {
     private ChatMessageRepository chatMessageRepository;
 
     @Override
-    public ChatMessageDTO sendMessage(SendMessageDTO sendMessageDTO) {
-        Optional<User> sender = userRepository.findById(sendMessageDTO.getSenderId());
-        if (sender.isEmpty()) {
-            throw new RuntimeException("Sender not found");
+    public ChatMessageDTO sendMessage(SendMessageDTO sendMessageDTO, String senderUsername) {
+        User senderUser;
+        if (senderUsername != null && !senderUsername.trim().isEmpty()) {
+            senderUser = userRepository.findByUsername(senderUsername);
+            if (senderUser == null) {
+                throw new RuntimeException("Authenticated sender not found: " + senderUsername);
+            }
+        } else if (sendMessageDTO.getSenderId() != null) {
+            senderUser = userRepository.findById(sendMessageDTO.getSenderId())
+                .orElseThrow(() -> new RuntimeException("Sender not found with ID: " + sendMessageDTO.getSenderId()));
+        } else {
+            throw new RuntimeException("Sender identity required");
         }
-        User senderUser = sender.get();
+
         User receiver = userRepository
             .findById(sendMessageDTO.getReceiverId())
-            .orElseThrow(() -> new RuntimeException("Receiver not found"));
+            .orElseThrow(() -> new RuntimeException("Receiver not found with ID: " + sendMessageDTO.getReceiverId()));
 
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setMessage(sendMessageDTO.getMessage());
@@ -47,7 +55,7 @@ public class ChatServiceImpl implements ChatService {
             chatMessage.getId(),
             toUserDTO(senderUser),
             toUserDTO(receiver),
-            sendMessageDTO.getMessage(),
+            chatMessage.getMessage(),
             chatMessage.getCreatedAt(),
             chatMessage.getStatus()
         );
@@ -55,15 +63,12 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ChatMessageDTO> getMessagesHistory(Long userId, String username) {
-        User sender = userRepository.findByUsername(username);
+        User currentUser = userRepository.findByUsername(username);
+        if (currentUser == null) {
+            return List.of();
+        }
 
-        List<ChatMessage> chatMessages =
-            chatMessageRepository.findBySenderIdAndReceiverIdOrSenderIdAndReceiverIdOrderByCreatedAtAsc(
-                sender.getId(),
-                userId,
-                userId,
-                sender.getId()
-            );
+        List<ChatMessage> chatMessages = chatMessageRepository.findChatHistory(currentUser.getId(), userId);
         return chatMessages
             .stream()
             .map(chatMessage ->

@@ -1,36 +1,50 @@
-<div class="container mt-4">
-  <div class="dropdown align-self-end">
-    <button class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-      ⚙
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-      <li>
-        <button class="dropdown-item text-danger" (click)="logout()">
-          Logout
-        </button>
-      </li>
-    </ul>
+<div class="p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h5 class="mb-0 fw-bold">Chats</h5>
+      <small class="text-muted" *ngIf="currentUsername">Logged in as <strong>{{ currentUsername }}</strong></small>
+    </div>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        ⚙
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li>
+          <button class="dropdown-item text-danger" (click)="logout()">
+            Logout
+          </button>
+        </li>
+      </ul>
+    </div>
   </div>
-  <h3 class="mb-3">Select User to Chat</h3>
 
-  <div class="card shadow p-3">
-
-    <div *ngIf="users.length === 0" class="text-muted">
-      No users found
+  <div class="card shadow-sm border-0">
+    <div *ngIf="users.length === 0" class="p-3 text-muted text-center">
+      No contacts available
     </div>
 
-    <ul class="list-group">
+    <ul class="list-group list-group-flush">
       <li
-        class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
+        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3"
+        [class.active]="activeUser?.id === user.id"
         *ngFor="let user of users"
         (click)="openChat(user)"
-        style="cursor:pointer"
+        style="cursor: pointer"
       >
-        <span>{{ user.username }}<i *ngIf="isOnline(user.username)" class="online-dot"></i></span>
-        <span class="badge bg-primary">Chat</span>
+        <div class="d-flex align-items-center">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-size: 14px; font-weight: bold;">
+            {{ user.username.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="fw-semibold">{{ user.username }}</div>
+            <small class="text-muted" [class.text-white-50]="activeUser?.id === user.id">
+              <span *ngIf="isOnline(user.username)" class="text-success fw-bold">Online</span>
+              <span *ngIf="!isOnline(user.username)">Offline</span>
+            </small>
+          </div>
+        </div>
+        <span *ngIf="isOnline(user.username)" class="online-dot"></span>
       </li>
     </ul>
-
   </div>
-
 </div>

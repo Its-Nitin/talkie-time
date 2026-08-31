@@ -1,63 +1,86 @@
-<div class="container mt-3">
-
+<div class="h-100 d-flex flex-column" *ngIf="receiverId; else noChatSelected">
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h5>Chat with {{ receiverUsername }}</h5>
+  <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px; font-weight: bold;">
+        {{ receiverUsername.charAt(0).toUpperCase() }}
+      </div>
+      <div>
+        <h6 class="mb-0 fw-bold">{{ receiverUsername }}</h6>
+        <small class="text-muted" *ngIf="isTyping">typing...</small>
+      </div>
+    </div>
   </div>
 
-  <!-- Chat Box -->
+  <!-- Messages Container -->
   <div
     #scrollMe
-    class="border rounded p-3 mb-2"
-    style="height: 400px; overflow-y: auto; background: #f8f9fa;"
+    class="flex-grow-1 p-3 overflow-auto"
+    style="background: #f8f9fa;"
   >
+    <div *ngIf="messages.length === 0" class="text-center text-muted my-5">
+      <p>No messages yet.</p>
+      <small>Say hello to <strong>{{ receiverUsername }}</strong> 👋</small>
+    </div>
 
-    <div *ngFor="let msg of messages" class="mb-2">
-
-      <!-- Sent -->
+    <div *ngFor="let msg of messages" class="mb-3">
+      <!-- Sent by current user -->
       <div
-        *ngIf="msg.sender.id === currentUser.id"
-        class="text-end"
+        *ngIf="msg.sender?.id === currentUser?.id"
+        class="d-flex flex-column align-items-end"
       >
-        <span class="badge bg-primary p-2">
+        <div class="p-2 px-3 rounded-3 text-white bg-primary shadow-sm" style="max-width: 70%; word-break: break-word;">
           {{ msg.message }}
-        </span>
-        <div class="small text-muted">
-          {{ msg.createdAt | date:'shortTime' }}
+        </div>
+        <div class="small text-muted mt-1 d-flex align-items-center gap-1">
+          <span *ngIf="parseTimestamp(msg.createdAt)">{{ parseTimestamp(msg.createdAt) | date:'shortTime' }}</span>
           <span *ngIf="msg.status === 'SENT'" class="tick single">✔</span>
-
           <span *ngIf="msg.status === 'DELIVERED'" class="tick double">✔✔</span>
-
           <span *ngIf="msg.status === 'SEEN'" class="tick double seen">✔✔</span>
         </div>
       </div>
 
-      <!-- Received -->
+      <!-- Received from other user -->
       <div
-        *ngIf="msg.sender.id !== currentUser.id"
-        class="text-start"
+        *ngIf="msg.sender?.id !== currentUser?.id"
+        class="d-flex flex-column align-items-start"
       >
-        <span class="badge bg-secondary p-2">
+        <div class="p-2 px-3 rounded-3 text-dark bg-white border shadow-sm" style="max-width: 70%; word-break: break-word;">
           {{ msg.message }}
-        </span>
-        <div class="small text-muted">
-          {{ msg.createdAt | date:'shortTime' }}
+        </div>
+        <div class="small text-muted mt-1">
+          <span *ngIf="parseTimestamp(msg.createdAt)">{{ parseTimestamp(msg.createdAt) | date:'shortTime' }}</span>
         </div>
       </div>
     </div>
-    <div *ngIf="isTyping" class="typing">typing</div>
-  </div>
-  <!-- Input -->
-  <div class="input-group">
-    <input
-      type="text"
-      class="form-control"
-      placeholder="Type message..."
-      [(ngModel)]="newMessage"
-      (keyup.enter)="sendMessage()"
-      (input)="onTyping()"
-    />
-    <button class="btn btn-primary" (click)="sendMessage()">Send</button>
+
+    <div *ngIf="isTyping" class="typing text-muted small ps-1">
+      <em>{{ receiverUsername }} is typing</em>
+    </div>
   </div>
 
+  <!-- Input Footer -->
+  <div class="p-3 border-top bg-white">
+    <div class="input-group">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Type a message..."
+        [(ngModel)]="newMessage"
+        (keyup.enter)="sendMessage()"
+        (input)="onTyping()"
+      />
+      <button class="btn btn-primary px-4" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+        Send
+      </button>
+    </div>
+  </div>
 </div>
+
+<ng-template #noChatSelected>
+  <div class="h-100 d-flex flex-column justify-content-center align-items-center text-muted p-4">
+    <div class="mb-3" style="font-size: 3rem;">💬</div>
+    <h5 class="fw-bold">Select a contact to start chatting</h5>
+    <p class="small text-muted">Choose any user from the left pane to open conversation</p>
+  </div>
+</ng-template>

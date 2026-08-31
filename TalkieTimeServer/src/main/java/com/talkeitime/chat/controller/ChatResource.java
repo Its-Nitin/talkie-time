@@ -24,11 +24,8 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class ChatResource {
 
-    @Autowired
-    private ChatService chatService;
-
+    private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
-
     private final ChatMessageRepository chatRepository;
 
     @PostMapping("send-message")
@@ -36,7 +33,8 @@ public class ChatResource {
         @RequestBody SendMessageDTO sendMessageDTO,
         Principal principal
     ) {
-        return ResponseEntity.ok().body(chatService.sendMessage(sendMessageDTO));
+        String username = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok().body(chatService.sendMessage(sendMessageDTO, username));
     }
 
     @GetMapping("messages-history/{userId}")
@@ -44,14 +42,16 @@ public class ChatResource {
         @PathVariable Long userId,
         Principal principal
     ) {
+        String username = principal != null ? principal.getName() : "";
         return ResponseEntity
             .ok()
-            .body(chatService.getMessagesHistory(userId, principal.getName()));
+            .body(chatService.getMessagesHistory(userId, username));
     }
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessageWs(SendMessageDTO sendMessageDTO, Principal principal) {
-        ChatMessageDTO save = chatService.sendMessage(sendMessageDTO);
+        String username = principal != null ? principal.getName() : null;
+        ChatMessageDTO save = chatService.sendMessage(sendMessageDTO, username);
 
         // Send to RECEIVER
         messagingTemplate.convertAndSendToUser(
@@ -61,12 +61,14 @@ public class ChatResource {
         );
 
         // Send to SENDER (so sender also sees instantly)
-        messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/messages", save);
+        if (principal != null) {
+            messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/messages", save);
+        }
     }
 
     @MessageMapping("/chat.typing")
     public void typing(TypingEvent typingEvent, Principal principal) {
-        if (principal == null) return;
+        if (principal == null || typingEvent == null || typingEvent.getReceiverId() == null) return;
 
         String sender = principal.getName();
         String receiver = typingEvent.getReceiverId();
@@ -80,21 +82,20 @@ public class ChatResource {
 
     @MessageMapping("/chat.ack")
     public void MessageAcknowledge(MessageAckDTO messageAckDTO, Principal principal) {
-        if (principal == null) return;
-
-        String sender = principal.getName();
-
-        ChatMessage byId = chatRepository.findById(messageAckDTO.getMessageId()).orElse(null);
-        if (byId == null) {
+        if (principal == null || messageAckDTO == null || messageAckDTO.getMessageId() == null || messageAckDTO.getStatus() == null) {
             return;
         }
 
-        byId.setStatus(messageAckDTO.getStatus());
-        chatRepository.save(byId);
-        Long receiver = messageAckDTO.getMessageId();
+        ChatMessage chatMessage = chatRepository.findById(messageAckDTO.getMessageId()).orElse(null);
+        if (chatMessage == null) {
+            return;
+        }
+
+        chatMessage.setStatus(messageAckDTO.getStatus());
+        chatRepository.save(chatMessage);
 
         messagingTemplate.convertAndSendToUser(
-            byId.getSender().getUsername(),
+            chatMessage.getSender().getUsername(),
             "/queue/ack",
             messageAckDTO
         );
